@@ -6,7 +6,7 @@ WORKDIR /app
 COPY build.gradle settings.gradle /app/
 RUN gradle build --no-daemon || return 0  # Pre-download dependencies to optimize build
 
-# Copy the remaining source files
+
 COPY . /app
 
 # Build the application
