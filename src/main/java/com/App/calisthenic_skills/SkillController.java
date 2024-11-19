@@ -13,23 +13,26 @@ import java.util.Optional;
 @RequestMapping("/skills")
 public class SkillController {
 
-    private final SkillRepository skillRepository;
+    //private final SkillRepositoryData skillRepository;
+    private final SkillRepository skillRepo;
+
 
     @Autowired
-    public SkillController(SkillRepository skillRepository){
-        this.skillRepository = skillRepository;
+    public SkillController(SkillRepository skillRepo){
+        this.skillRepo = skillRepo;
     }
 
     //GET
     @GetMapping("")
     public List<Skill> getSkills(){
-        return skillRepository.getSkills();
+        List<Skill> list = skillRepo.findAll();
+        return list;
     }
 
-    @GetMapping("/skillId/{id}")
+    @GetMapping("/id/{id}")
     public Skill getSkillByID(@PathVariable Integer id){
 
-        Optional<Skill> skill = skillRepository.getSkillByID(id);
+        Optional<Skill> skill = skillRepo.findById(id);
         if (skill.isEmpty()){
             throw new SkillNotFoundException();
         }
@@ -37,26 +40,52 @@ public class SkillController {
 
     }
 
-    @GetMapping("/skillName/{name}")
-    public Skill getSkillByName(@PathVariable String name){return skillRepository.getSkillByName(name);}
+    @GetMapping("/name/{name}")
+    public Optional<Skill> getSkillByName(@PathVariable String name){return skillRepo.findByName(name);}
+    @GetMapping("/difficulty/{difficulty}")
+    public List<Skill> getSkillByDifficulty(@PathVariable String difficulty){return skillRepo.findByDifficulty(difficulty);}
+    @GetMapping("/progress/{progress}")
+    public List<Skill> getSkillByPorgress(@PathVariable String progress){return skillRepo.findByProgress(progress);}
 
     //POST(CREATE)
     @ResponseStatus(HttpStatus.CREATED)
     @PostMapping("")
-    void createSkill(@Valid @RequestBody Skill skill){ skillRepository.createSkill(skill);}
+    void createSkill(@Valid @RequestBody Skill skill){
+        if (skillRepo.existsById(skill.getId())) {
+            throw new SkillDuplicateException(skill.getId());
+        }
+        skillRepo.save(skill);
+
+    }
 
     //PUT(UPDATE)
     @ResponseStatus(HttpStatus.NO_CONTENT)
     @PutMapping("/{id}")
-    void updateSkill(@Valid @RequestBody Skill skill, @PathVariable Integer id){
-        skillRepository.updateSkill(skill,id);
+    void updateSkill(@Valid @RequestBody Skill updatedSkill, @PathVariable Integer id){
+        Skill existingSkill = skillRepo.findById(id).orElseThrow(() -> new SkillNotFoundException());
+
+        existingSkill.setName(updatedSkill.getName());
+        existingSkill.setDescription(updatedSkill.getDescription());
+        existingSkill.setDifficulty(updatedSkill.getDifficulty());
+        existingSkill.setProgress(updatedSkill.getProgress());
+
+        skillRepo.save(existingSkill);
+
     }
 
     //DELETE
     @ResponseStatus(HttpStatus.NO_CONTENT)
     @DeleteMapping("{id}")
     void deleteSkill(@PathVariable Integer id){
-        skillRepository.deleteSkill(id);
+        skillRepo.deleteById(id);
 
     }
+    //DELETE
+    @ResponseStatus(HttpStatus.NO_CONTENT)
+    @DeleteMapping("deleteAll")
+    void deleteAll(){
+        skillRepo.deleteAll();
+
+    }
+
 }
